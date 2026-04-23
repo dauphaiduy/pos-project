@@ -2,6 +2,7 @@
   "name": "pos-project",
   "private": true,
   "version": "0.0.0",
+  "main": "apps/main/dist/main.js",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -10,12 +11,51 @@
     "dev": "concurrently -k -n renderer,preload,main -c cyan,yellow,blue \"npm run dev --workspace=apps/renderer\" \"npm run dev --workspace=apps/preload\" \"npm run dev --workspace=apps/main\"",
     "build": "npm run build --workspace=packages/shared-types && npm run build --workspace=apps/preload && npm run build --workspace=apps/main && npm run build --workspace=apps/renderer",
     "electron:start": "electron apps/main",
-    "dev:full": "concurrently -k -n renderer,preload,main,electron -c cyan,yellow,blue,magenta \"npm run dev --workspace=apps/renderer\" \"npm run dev --workspace=apps/preload\" \"npm run dev --workspace=apps/main\" \"wait-on http://localhost:5173 && sleep 5 && electron apps/main\""
+    "dev:full": "concurrently -k -n renderer,preload,main,electron -c cyan,yellow,blue,magenta \"npm run dev --workspace=apps/renderer\" \"npm run dev --workspace=apps/preload\" \"npm run dev --workspace=apps/main\" \"wait-on http://localhost:5173 && sleep 5 && electron apps/main\"",
+    "electron:build": "npm run build && electron-builder"
+  },
+  "build": {
+    "appId": "com.pos.app",
+    "productName": "POS",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "apps/main/dist/**",
+      "apps/preload/dist/**",
+      "apps/renderer/dist/**",
+      "node_modules/**",
+      "package.json"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**",
+      "**/node_modules/bindings/**",
+      "**/node_modules/file-uri-to-path/**"
+    ],
+    "npmRebuild": true,
+    "linux": {
+      "target": "AppImage",
+      "category": "Office",
+      "icon": "public/icon.png"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/icon.icns"
+    }
   },
   "devDependencies": {
     "@electron/rebuild": "^3.7.2",
     "concurrently": "^9.0.0",
     "electron": "^35.0.0",
+    "electron-builder": "^26.8.1",
     "wait-on": "^8.0.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.9.0"
   }
 }
