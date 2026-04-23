@@ -12,6 +12,12 @@ const PAYMENT_ICONS: Record<string, string> = {
   qr:   '📱 QR',
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  pending:   'Chờ xử lý',
+  completed: 'Hoàn thành',
+  cancelled: 'Đã hủy',
+};
+
 function fmt(iso: string) {
   return new Date(iso).toLocaleString(undefined, {
     weekday: 'short',
@@ -58,7 +64,7 @@ function OrderDetail({
       </div>
 
       <div className="order-detail-meta">
-        <span className={`order-status order-status--${order.status}`}>{order.status}</span>
+        <span className={`order-status order-status--${order.status}`}>{STATUS_LABELS[order.status] ?? order.status}</span>
         <span className="order-detail-payment">{PAYMENT_ICONS[order.payment_method] ?? order.payment_method}</span>
       </div>
 
@@ -192,7 +198,7 @@ export function OrdersScreen() {
                 </div>
                 <div className="order-card-mid">
                   <span className={`order-status order-status--${order.status}`}>
-                    {order.status}
+                    {STATUS_LABELS[order.status] ?? order.status}
                   </span>
                   <span className="order-card-itemcount">
                     {order.items.length > 0

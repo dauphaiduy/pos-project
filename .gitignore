@@ -12,16 +12,6 @@ dist
 dist-ssr
 *.local
 
-# Electron / SQLite
-out/
-*.db
-*.db-shm
-*.db-wal
-release/
-
-# OS
-Thumbs.db
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

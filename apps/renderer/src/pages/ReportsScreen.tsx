@@ -175,10 +175,12 @@ export function ReportsScreen() {
               {chartData.map(([label, value]) => (
                 <div key={label} className="bar-col">
                   <span className="bar-value">{fmtMoney(value)}</span>
+                  <br />
                   <div
                     className="bar"
                     style={{ height: `${Math.max(4, Math.round((value / maxChartVal) * 100))}%` }}
                   />
+                  <br />
                   <span className="bar-label">
                     {chartView === 'daily' ? label.slice(5) : label}
                   </span>
