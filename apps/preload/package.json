@@ -1,0 +1,14 @@
+{
+  "name": "@pos/preload",
+  "version": "0.0.0",
+  "main": "./dist/preload.js",
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@pos/shared-types": "*",
+    "@types/node": "^22.0.0",
+    "typescript": "~6.0.2"
+  }
+}

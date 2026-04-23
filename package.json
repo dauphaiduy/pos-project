@@ -1,0 +1,21 @@
+{
+  "name": "pos-project",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n renderer,preload,main -c cyan,yellow,blue \"npm run dev --workspace=apps/renderer\" \"npm run dev --workspace=apps/preload\" \"npm run dev --workspace=apps/main\"",
+    "build": "npm run build --workspace=packages/shared-types && npm run build --workspace=apps/preload && npm run build --workspace=apps/main && npm run build --workspace=apps/renderer",
+    "electron:start": "electron apps/main",
+    "dev:full": "concurrently -k -n renderer,preload,main,electron -c cyan,yellow,blue,magenta \"npm run dev --workspace=apps/renderer\" \"npm run dev --workspace=apps/preload\" \"npm run dev --workspace=apps/main\" \"wait-on http://localhost:5173 && sleep 5 && electron apps/main\""
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.7.2",
+    "concurrently": "^9.0.0",
+    "electron": "^35.0.0",
+    "wait-on": "^8.0.0"
+  }
+}
