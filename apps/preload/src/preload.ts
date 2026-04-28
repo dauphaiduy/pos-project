@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { Order, CreateOrderInput, UpdateOrderInput, Product, CreateProductInput, UpdateProductInput } from '@pos/shared-types';
+import type { Order, CreateOrderInput, UpdateOrderInput, UpdateOrderItemsInput, Product, CreateProductInput, UpdateProductInput } from '@pos/shared-types';
 
 contextBridge.exposeInMainWorld('electronAPI', {
   createOrder: (input: CreateOrderInput): Promise<Order> =>
@@ -10,6 +10,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   updateOrderStatus: (input: UpdateOrderInput): Promise<Order> =>
     ipcRenderer.invoke('orders:update-status', input),
+
+  updateOrderItems: (input: UpdateOrderItemsInput): Promise<Order> =>
+    ipcRenderer.invoke('orders:update-items', input),
 
   listProducts: (): Promise<Product[]> =>
     ipcRenderer.invoke('products:list'),

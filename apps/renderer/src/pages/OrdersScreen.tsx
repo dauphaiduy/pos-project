@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useOrderStore } from '../store/orderStore';
-import type { Order } from '@pos/shared-types';
+import { useProductStore } from '../store/productStore';
+import type { Order, OrderItem, Product } from '@pos/shared-types';
 
 type Filter = 'all' | 'pending' | 'completed' | 'cancelled';
 
@@ -44,6 +45,9 @@ function OrderDetail({
   confirming,
   onCancel,
   cancelling,
+  onSaveItems,
+  saving,
+  products,
 }: {
   order: Order;
   onClose: () => void;
@@ -51,8 +55,167 @@ function OrderDetail({
   confirming: boolean;
   onCancel: (id: number) => void;
   cancelling: boolean;
+  onSaveItems: (id: number, items: OrderItem[], total: number, payment_method: string) => Promise<void>;
+  saving: boolean;
+  products: Product[];
 }) {
   const [askCancel, setAskCancel] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editItems, setEditItems] = useState<OrderItem[]>([]);
+  const [editPayment, setEditPayment] = useState('cash');
+  const [showAddPanel, setShowAddPanel] = useState(false);
+  const [addSearch, setAddSearch] = useState('');
+
+  function startEdit() {
+    setEditItems(order.items.map((i) => ({ ...i })));
+    setEditPayment(order.payment_method);
+    setAskCancel(false);
+    setShowAddPanel(false);
+    setAddSearch('');
+    setIsEditing(true);
+  }
+
+  function addProduct(p: Product) {
+    setEditItems((prev) => {
+      const idx = prev.findIndex((i) => i.name === p.name && i.price === p.price);
+      if (idx >= 0)
+        return prev.map((item, i) => i === idx ? { ...item, quantity: item.quantity + 1 } : item);
+      return [...prev, { productId: p.id, name: p.name, price: p.price, quantity: 1, note: '' }];
+    });
+  }
+
+  function changeQty(idx: number, delta: number) {
+    setEditItems((prev) => {
+      const newQty = prev[idx].quantity + delta;
+      if (newQty <= 0) return prev.filter((_, i) => i !== idx);
+      return prev.map((item, i) => i === idx ? { ...item, quantity: newQty } : item);
+    });
+  }
+
+  const editTotal = editItems.reduce((s, i) => s + i.price * i.quantity, 0);
+
+  async function handleSave() {
+    await onSaveItems(order.id, editItems, editTotal, editPayment);
+    setIsEditing(false);
+  }
+
+  if (isEditing) {
+    return (
+      <div className="order-detail-panel">
+        <div className="order-detail-header">
+          <div>
+            <h3 className="order-detail-title">✏️ Sửa đơn #{order.id}</h3>
+            <span className="order-detail-time">Chỉnh sửa mặt hàng và thanh toán</span>
+          </div>
+          <button className="order-detail-close" onClick={() => setIsEditing(false)} aria-label="Close">✕</button>
+        </div>
+
+        <div className="order-edit-items">
+          {editItems.length === 0 ? (
+            <p className="order-edit-empty">Tất cả mặt hàng đã bị xóa.<br />Nhấn Lưu để xác nhận hoặc Hủy để quay lại.</p>
+          ) : (
+            <ul className="order-items-list">
+              {editItems.map((item, idx) => (
+                <li key={idx} className="order-edit-item-row">
+                  <div className="order-item-name-wrap">
+                    <span className="order-item-name">{item.name}</span>
+                    <span className="order-item-note">{formatVND(item.price)} / cái</span>
+                  </div>
+                  <div className="order-qty-controls">
+                    <button className="order-qty-btn" onClick={() => changeQty(idx, -1)}>−</button>
+                    <span className="order-qty-val">{item.quantity}</span>
+                    <button className="order-qty-btn" onClick={() => changeQty(idx, +1)}>+</button>
+                  </div>
+                  <span className="order-item-price">{formatVND(item.price * item.quantity)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="order-add-panel">
+          <button
+            className="order-add-toggle"
+            onClick={() => setShowAddPanel((v) => !v)}
+          >
+            {showAddPanel ? '▲ Ẩn danh sách' : '➕ Thêm sản phẩm'}
+          </button>
+          {showAddPanel && (
+            <div className="order-add-product-list">
+              <input
+                className="order-add-search"
+                placeholder="Tìm sản phẩm…"
+                value={addSearch}
+                onChange={(e) => setAddSearch(e.target.value)}
+                autoFocus
+              />
+              <div className="order-add-grid">
+                {products
+                  .filter(
+                    (p) =>
+                      p.available === 1 &&
+                      p.name.toLowerCase().includes(addSearch.toLowerCase()),
+                  )
+                  .map((p) => (
+                    <button
+                      key={p.id}
+                      className="order-add-product-btn"
+                      onClick={() => addProduct(p)}
+                    >
+                      <span className="order-add-product-emoji">{p.emoji || '🛍️'}</span>
+                      <span className="order-add-product-name">{p.name}</span>
+                      <span className="order-add-product-price">{formatVND(p.price)}</span>
+                    </button>
+                  ))}
+                {products.filter(
+                  (p) =>
+                    p.available === 1 &&
+                    p.name.toLowerCase().includes(addSearch.toLowerCase()),
+                ).length === 0 && (
+                  <p className="order-add-empty">Không tìm thấy sản phẩm.</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="order-edit-payment">
+          <p className="order-edit-payment-label">Thanh toán</p>
+          <div className="order-edit-payment-options">
+            {(['cash', 'card', 'qr'] as const).map((m) => (
+              <button
+                key={m}
+                className={`order-payment-btn${editPayment === m ? ' active' : ''}`}
+                onClick={() => setEditPayment(m)}
+              >
+                {PAYMENT_ICONS[m]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="order-detail-footer">
+          <div className="order-detail-total">
+            <span>Tổng cộng</span>
+            <span className="order-detail-total-amount">{formatVND(editTotal)}</span>
+          </div>
+          <div className="order-edit-actions">
+            <button className="order-edit-cancel-btn" onClick={() => setIsEditing(false)} disabled={saving}>
+              Hủy
+            </button>
+            <button
+              className="order-save-btn"
+              onClick={handleSave}
+              disabled={saving || editItems.length === 0}
+            >
+              {saving ? 'Đang lưu…' : '✓ Lưu đơn'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="order-detail-panel">
       <div className="order-detail-header">
@@ -96,6 +259,11 @@ function OrderDetail({
           <span className="order-detail-total-amount">{formatVND(order.total)}</span>
         </div>
         {order.status === 'pending' && (
+          <button className="order-edit-btn" onClick={startEdit}>
+            ✏️ Sửa đơn hàng
+          </button>
+        )}
+        {order.status === 'pending' && (
           <button
             className="confirm-btn confirm-btn--full"
             disabled={confirming || cancelling}
@@ -133,15 +301,21 @@ function OrderDetail({
 }
 
 export function OrdersScreen() {
-  const { orders, isLoading, error, fetchOrders, confirmOrder, cancelOrder } = useOrderStore();
+  const { orders, isLoading, error, fetchOrders, confirmOrder, cancelOrder, editOrderItems } = useOrderStore();
+  const { products, fetchProducts } = useProductStore();
   const [filter, setFilter] = useState<Filter>('all');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
+  const [savingId, setSavingId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const filtered: Order[] =
     filter === 'all' ? orders : orders.filter((o) => o.status === filter);
@@ -158,6 +332,12 @@ export function OrdersScreen() {
     setCancellingId(id);
     await cancelOrder(id);
     setCancellingId(null);
+  };
+
+  const handleSaveItems = async (id: number, items: OrderItem[], total: number, payment_method: string) => {
+    setSavingId(id);
+    await editOrderItems(id, items, total, payment_method);
+    setSavingId(null);
   };
 
   return (
@@ -231,6 +411,9 @@ export function OrdersScreen() {
             confirming={confirmingId === selectedOrder.id}
             onCancel={handleCancel}
             cancelling={cancellingId === selectedOrder.id}
+            onSaveItems={handleSaveItems}
+            saving={savingId === selectedOrder.id}
+            products={products}
           />
         )}
       </div>

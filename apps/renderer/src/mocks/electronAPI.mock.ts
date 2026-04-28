@@ -1,4 +1,4 @@
-import type { Order, CreateOrderInput, UpdateOrderInput, Product, CreateProductInput, UpdateProductInput } from '@pos/shared-types';
+import type { Order, CreateOrderInput, UpdateOrderInput, UpdateOrderItemsInput, Product, CreateProductInput, UpdateProductInput } from '@pos/shared-types';
 
 let nextOrderId = 1;
 const orderStore: Order[] = [
@@ -65,6 +65,16 @@ export const electronAPIMock: Window['electronAPI'] = {
     const order = orderStore.find((o) => o.id === input.id);
     if (!order) throw new Error(`Order ${input.id} not found`);
     order.status = input.status;
+    return { ...order };
+  },
+
+  updateOrderItems: async (input: UpdateOrderItemsInput): Promise<Order> => {
+    await delay(150);
+    const order = orderStore.find((o) => o.id === input.id);
+    if (!order) throw new Error(`Order ${input.id} not found`);
+    order.items = input.items;
+    order.total = input.total;
+    order.payment_method = input.payment_method;
     return { ...order };
   },
 

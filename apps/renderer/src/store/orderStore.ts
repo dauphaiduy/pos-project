@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Order, CreateOrderInput } from '@pos/shared-types';
+import type { Order, CreateOrderInput, OrderItem } from '@pos/shared-types';
 
 interface OrderState {
   orders: Order[];
@@ -9,6 +9,7 @@ interface OrderState {
   addOrder: (input: CreateOrderInput) => Promise<void>;
   confirmOrder: (id: number) => Promise<void>;
   cancelOrder: (id: number) => Promise<void>;
+  editOrderItems: (id: number, items: OrderItem[], total: number, payment_method: string) => Promise<void>;
 }
 
 export const useOrderStore = create<OrderState>((set) => ({
@@ -62,6 +63,17 @@ export const useOrderStore = create<OrderState>((set) => ({
       }));
     } catch (err) {
       set({ error: String(err), isLoading: false });
+    }
+  },
+
+  editOrderItems: async (id: number, items: OrderItem[], total: number, payment_method: string) => {
+    try {
+      const updated = await window.electronAPI.updateOrderItems({ id, items, total, payment_method });
+      set((state) => ({
+        orders: state.orders.map((o) => (o.id === id ? updated : o)),
+      }));
+    } catch (err) {
+      set({ error: String(err) });
     }
   },
 }));

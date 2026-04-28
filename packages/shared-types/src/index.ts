@@ -27,6 +27,13 @@ export interface UpdateOrderInput {
   status: string;
 }
 
+export interface UpdateOrderItemsInput {
+  id: number;
+  items: OrderItem[];
+  total: number;
+  payment_method: string;
+}
+
 export interface Product {
   id: number;
   name: string;

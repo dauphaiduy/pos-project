@@ -39,3 +39,11 @@ export function updateOrderStatus(id: number, status: string): Order {
   const row = db.prepare(`SELECT * FROM orders WHERE id = ?`).get(id) as Record<string, unknown>;
   return parseRow(row);
 }
+
+export function updateOrderItems(id: number, items: OrderItem[], total: number, payment_method: string): Order {
+  const db = getDatabase();
+  db.prepare(`UPDATE orders SET items = ?, total = ?, payment_method = ? WHERE id = ?`)
+    .run(JSON.stringify(items), total, payment_method, id);
+  const row = db.prepare(`SELECT * FROM orders WHERE id = ?`).get(id) as Record<string, unknown>;
+  return parseRow(row);
+}

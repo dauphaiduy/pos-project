@@ -1,4 +1,4 @@
-import type { Order, CreateOrderInput, UpdateOrderInput, Product, CreateProductInput, UpdateProductInput } from '@pos/shared-types';
+import type { Order, CreateOrderInput, UpdateOrderInput, UpdateOrderItemsInput, Product, CreateProductInput, UpdateProductInput } from '@pos/shared-types';
 
 declare global {
   interface Window {
@@ -6,6 +6,7 @@ declare global {
       createOrder: (input: CreateOrderInput) => Promise<Order>;
       listOrders: () => Promise<Order[]>;
       updateOrderStatus: (input: UpdateOrderInput) => Promise<Order>;
+      updateOrderItems: (input: UpdateOrderItemsInput) => Promise<Order>;
       listProducts: () => Promise<Product[]>;
       createProduct: (input: CreateProductInput) => Promise<Product>;
       updateProduct: (input: UpdateProductInput) => Promise<Product>;
